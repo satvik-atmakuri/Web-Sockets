@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Client</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        #progress-container {
+            margin-top: 20px;
+        }
+        #progress-bar {
+            width: 100%;
+            background-color: #f3f3f3;
+        }
+        #progress-bar div {
+            height: 20px;
+            width: 0%;
+            background-color: #4caf50;
+        }
+        #all-responses {
+            margin-top: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ccc;
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<h1>WebSocket Client</h1>
+<p>Click the button below to start the WebSocket client. The progress bar will update as requests are made, and all responses will be shown below.</p>
+
+<button onclick="startClient()">Start WebSocket Client</button>
+
+<div id="progress-container">
+    <h3>Progress: <span id="progress-label">0 / 10000</span></h3>
+    <div id="progress-bar">
+        <div></div>
+    </div>
+</div>
+
+<div id="all-container">
+    <h3>All Responses:</h3>
+    <div id="all-responses"></div>
+</div>
+
+<script>
+    let progress = 0;
+    let total = 10000;
+
+    function startClient() {
+        fetch('/start_client')
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === "started") {
+                    updateProgress();
+                    updateAllResponses();
+                }
+            });
+    }
+
+    function updateProgress() {
+        fetch('/progress')
+            .then(response => response.json())
+            .then(data => {
+                progress = data.progress;
+                total = data.total;
+
+                // Update progress label and bar
+                document.getElementById('progress-label').innerText = `${progress} / ${total}`;
+                let progressBar = document.getElementById('progress-bar').firstElementChild;
+                progressBar.style.width = (progress / total) * 100 + "%";
+
+                if (progress < total) {
+                    setTimeout(updateProgress, 100);  // Update every 100ms
+                }
+            });
+    }
+
+    function updateAllResponses() {
+        fetch('/all_responses')
+            .then(response => response.json())
+            .then(data => {
+                let allResponses = data.all_responses;
+                let allResponsesContainer = document.getElementById('all-responses');
+                allResponsesContainer.innerHTML = ""; // Clear previous responses
+
+                allResponses.forEach(response => {
+                    let div = document.createElement('div');
+                    div.textContent = response;
+                    allResponsesContainer.appendChild(div);
+                });
+
+                if (progress < total) {
+                    setTimeout(updateAllResponses, 500);  // Update every 500ms
+                }
+            });
+    }
+</script>
+
+</body>
+</html>
